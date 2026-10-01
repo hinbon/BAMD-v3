@@ -59,7 +59,8 @@ BAMD-v3/
 ├── .gitignore
 │
 ├── data/
-│   └── README.md
+│
+├── configs/
 │
 ├── scripts/
 │   └── run_bamd_v3.sh
@@ -79,8 +80,6 @@ BAMD-v3/
 ## 3. Installation
 
 Create and activate a Python environment.
-
-Example:
 
 ```bash
 python -m venv .venv
@@ -132,8 +131,6 @@ rpl_ver
 
 The remaining input features are treated as numerical features.
 
-Dataset files are excluded from Git version control.
-
 ---
 
 # 5. Step 1 - Train Teacher
@@ -142,9 +139,9 @@ The teacher is an MLP designed for mixed numerical and categorical tabular data.
 
 Categorical features are converted to integer IDs and passed through learnable embedding layers.
 
-For categorical feature \(j\), the embedding dimension is:
+For categorical feature $j$, the embedding dimension is:
 
-\[
+$$
 d_j =
 \min
 \left(
@@ -157,9 +154,9 @@ d_j =
 \right\rfloor
 \right)
 \right)
-\]
+$$
 
-where \(C_j\) is the categorical cardinality.
+where $C_j$ is the categorical cardinality.
 
 The teacher backbone is:
 
@@ -219,14 +216,14 @@ The teacher checkpoint is selected using validation loss.
 
 Permutation Feature Importance measures how much the teacher performance degrades when one feature is randomly permuted.
 
-For feature \(j\):
+For feature $j$:
 
-\[
+$$
 I_j =
 L_{\text{permuted},j}
 -
 L_{\text{baseline}}
-\]
+$$
 
 A larger value indicates that the teacher relies more strongly on that feature.
 
@@ -263,7 +260,7 @@ Step 3 reduces the full training set to a smaller candidate pool before final BA
 
 For each sample:
 
-\[
+$$
 Z =
 [
 X_{\text{num}},
@@ -271,12 +268,12 @@ E_{\text{node}},
 E_{\text{parent}},
 E_{\text{rpl}}
 ]
-\]
+$$
 
 where:
 
-- \(X_{\text{num}}\) contains standardized numerical features,
-- \(E\) denotes learned categorical embeddings from the teacher.
+- $X_{\text{num}}$ contains standardized numerical features,
+- $E$ denotes learned categorical embeddings from the teacher.
 
 Categorical embedding blocks are normalized before further processing.
 
@@ -288,37 +285,37 @@ Feature importance is used to construct separate weights for Class 0 and Class 1
 
 For Class 0:
 
-\[
+$$
 W_0 =
 \alpha_g I_{\text{global}}
 +
 \alpha_c I_{C0}
-\]
+$$
 
 For Class 1:
 
-\[
+$$
 W_1 =
 \alpha_g I_{\text{global}}
 +
 \alpha_c I_{C1}
-\]
+$$
 
 Default values:
 
-\[
+$$
 \alpha_g = 0.7
-\]
+$$
 
-\[
+$$
 \alpha_c = 0.3
-\]
+$$
 
 Each feature block is scaled by:
 
-\[
+$$
 \sqrt{w_j}
-\]
+$$
 
 This produces:
 
@@ -329,13 +326,13 @@ weighted_representation_class1.npy
 
 The square-root scaling ensures that squared Euclidean distance becomes a feature-weighted distance:
 
-\[
+$$
 d^2(x,y)
 =
 \sum_j
 w_j
 \|x_j-y_j\|^2
-\]
+$$
 
 ---
 
@@ -345,9 +342,9 @@ Candidate selection is performed separately for Class 0 and Class 1 using MiniBa
 
 The default candidate pool size is:
 
-\[
+$$
 4 \times 633 = 2532
-\]
+$$
 
 with approximately:
 
@@ -395,20 +392,20 @@ BAMD-v3 performs the final selection from the candidate pool.
 
 The final score is:
 
-\[
+$$
 S =
 0.55R
 +
 0.30B
 +
 0.15D_{\text{mix}}
-\]
+$$
 
 where:
 
-- \(R\): representativeness,
-- \(B\): bounded boundary support,
-- \(D_{\text{mix}}\): mixed diversity.
+- $R$: representativeness,
+- $B$: bounded boundary support,
+- $D_{\text{mix}}$: mixed diversity.
 
 ---
 
@@ -434,10 +431,10 @@ Only one sample is finally selected from each cluster.
 
 Teacher uncertainty is defined as:
 
-\[
+$$
 U_i =
 \min(p_{i0}, p_{i1})
-\]
+$$
 
 For each candidate, the method computes:
 
@@ -446,18 +443,18 @@ For each candidate, the method computes:
 
 Boundary support is:
 
-\[
+$$
 L_i =
 \frac{d_{\text{same}}}
 {d_{\text{same}} + d_{\text{opp}} + \epsilon}
-\]
+$$
 
 The final boundary value is:
 
-\[
+$$
 B_i =
 U_i L_i
-\]
+$$
 
 Default nearest-neighbor settings:
 
@@ -472,29 +469,29 @@ k_opp  = 10
 
 Mixed diversity combines latent-space and categorical diversity:
 
-\[
+$$
 D_{\text{mix}}
 =
 \alpha D_{\text{latent}}
 +
 (1-\alpha)D_{\text{cat}}
-\]
+$$
 
 Default:
 
-\[
+$$
 \alpha = 0.8
-\]
+$$
 
 Therefore:
 
-\[
+$$
 D_{\text{mix}}
 =
 0.8D_{\text{latent}}
 +
 0.2D_{\text{cat}}
-\]
+$$
 
 Latent diversity uses cosine distance.
 
@@ -583,11 +580,11 @@ Default evaluation seeds:
 Typical training settings:
 
 ```text
-epochs       = 100
-batch size   = 256
+epochs        = 100
+batch size    = 256
 learning rate = 1e-3
-weight decay = 1e-4
-patience     = 20
+weight decay  = 1e-4
+patience      = 20
 ```
 
 Evaluation output is stored under:
