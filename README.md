@@ -22,29 +22,29 @@ The final selected subset contains:
 
 ```text
 Raw train / validation data
-        ↓
+        ↓
 Step 1 - Train MLP Teacher
-        ↓
+        ↓
 Teacher checkpoint + probabilities
-        ↓
+        ↓
 Step 2 - Permutation Feature Importance
-        ↓
+        ↓
 Global and class-specific feature importance
-        ↓
+        ↓
 Step 3 - Build Candidate Pool
-        ↓
+        ↓
 Class-specific weighted representation
-        ↓
+        ↓
 Class-wise MiniBatchKMeans
-        ↓
+        ↓
 2,532 candidate samples
-        ↓
+        ↓
 BAMD-v3 Selection
-        ↓
+        ↓
 R + B + D_mix
-        ↓
+        ↓
 633 selected samples
-        ↓
+        ↓
 Downstream MLP Evaluation
 ```
 
@@ -63,14 +63,14 @@ BAMD-v3/
 ├── configs/
 │
 ├── scripts/
-│   └── run_bamd_v3.sh
+│   └── run_bamd_v3.sh
 │
 ├── src/
-│   ├── step1_train_teacher.py
-│   ├── step2_permutation_importance.py
-│   ├── step3_build_candidate_pool.py
-│   ├── bamd_v3.py
-│   └── evaluate_subset.py
+│   ├── step1_train_teacher.py
+│   ├── step2_permutation_importance.py
+│   ├── step3_build_candidate_pool.py
+│   ├── bamd_v3.py
+│   └── evaluate_subset.py
 │
 └── outputs/
 ```
@@ -141,7 +141,7 @@ Categorical features are converted to integer IDs and passed through learnable e
 
 For categorical feature $j$, the embedding dimension is:
 
-`$d_j = \min(16, \max(4, \lfloor C_j / 2 \rfloor))$`
+$d_j = \min(16, \max(4, \lfloor C_j / 2 \rfloor))$
 
 where $C_j$ is the categorical cardinality.
 
@@ -149,25 +149,25 @@ The teacher backbone is:
 
 ```text
 Numerical features
-        +
+        +
 Categorical embeddings
-        ↓
+        ↓
 Linear → 256
-        ↓
+        ↓
 ReLU
-        ↓
+        ↓
 Dropout
-        ↓
+        ↓
 Linear → 128
-        ↓
+        ↓
 ReLU
-        ↓
+        ↓
 Dropout
-        ↓
+        ↓
 Linear → 64
-        ↓
+        ↓
 ReLU
-        ↓
+        ↓
 Classifier → 2 classes
 ```
 
@@ -175,9 +175,9 @@ Run:
 
 ```bash
 python src/step1_train_teacher.py \
-    --train data/train.csv \
-    --val data/val.csv \
-    --output-dir outputs/teacher
+    --train data/train.csv \
+    --val data/val.csv \
+    --output-dir outputs/teacher
 ```
 
 Main outputs:
@@ -205,7 +205,7 @@ Permutation Feature Importance measures how much the teacher performance degrade
 
 For feature $j$:
 
-`$I_j = L_{\text{permuted},j} - L_{\text{baseline}}$`
+$I_j = L_{\text{permuted},j} - L_{\text{baseline}}$
 
 A larger value indicates that the teacher relies more strongly on that feature.
 
@@ -219,9 +219,9 @@ Run:
 
 ```bash
 python src/step2_permutation_importance.py \
-    --train data/train.csv \
-    --teacher-dir outputs/teacher \
-    --result-dir outputs/pfi
+    --train data/train.csv \
+    --teacher-dir outputs/teacher \
+    --result-dir outputs/pfi
 ```
 
 Main output:
@@ -242,7 +242,7 @@ Step 3 reduces the full training set to a smaller candidate pool before final BA
 
 For each sample:
 
-`$Z = [X_{\text{num}}, E_{\text{node}}, E_{\text{parent}}, E_{\text{rpl}}]$`
+$Z = [X_{\text{num}}, E_{\text{node}}, E_{\text{parent}}, E_{\text{rpl}}]$
 
 where:
 
@@ -259,21 +259,21 @@ Feature importance is used to construct separate weights for Class 0 and Class 1
 
 For Class 0:
 
-`$W_0 = \alpha_g I_{\text{global}} + \alpha_c I_{C0}$`
+$W_0 = \alpha_g I_{\text{global}} + \alpha_c I_{C0}$
 
 For Class 1:
 
-`$W_1 = \alpha_g I_{\text{global}} + \alpha_c I_{C1}$`
+$W_1 = \alpha_g I_{\text{global}} + \alpha_c I_{C1}$
 
 Default values:
 
-`$\alpha_g = 0.7$`
+$\alpha_g = 0.7$
 
-`$\alpha_c = 0.3$`
+$\alpha_c = 0.3$
 
 Each feature block is scaled by:
 
-`$\sqrt{w_j}$`
+$\sqrt{w_j}$
 
 This produces:
 
@@ -284,7 +284,7 @@ weighted_representation_class1.npy
 
 The square-root scaling ensures that squared Euclidean distance becomes a feature-weighted distance:
 
-`$d^2(x,y) = \sum_j w_j \|x_j-y_j\|^2$`
+$d^2(x,y) = \sum_j w_j \|x_j-y_j\|^2$
 
 ---
 
@@ -294,7 +294,7 @@ Candidate selection is performed separately for Class 0 and Class 1 using MiniBa
 
 The default candidate pool size is:
 
-`$4 \times 633 = 2532$`
+$4 \times 633 = 2532$
 
 with approximately:
 
@@ -309,16 +309,16 @@ Run:
 
 ```bash
 python src/step3_build_candidate_pool.py \
-    --train data/train.csv \
-    --teacher-dir outputs/teacher \
-    --importance-csv outputs/pfi/feature_importance.csv \
-    --result-dir outputs/candidates \
-    --final-ratio 0.01 \
-    --candidate-multiplier 4.0 \
-    --candidate-class1-ratio 0.30 \
-    --candidates-per-cluster 2 \
-    --global-weight 0.7 \
-    --class-weight 0.3
+    --train data/train.csv \
+    --teacher-dir outputs/teacher \
+    --importance-csv outputs/pfi/feature_importance.csv \
+    --result-dir outputs/candidates \
+    --final-ratio 0.01 \
+    --candidate-multiplier 4.0 \
+    --candidate-class1-ratio 0.30 \
+    --candidates-per-cluster 2 \
+    --global-weight 0.7 \
+    --class-weight 0.3
 ```
 
 Main outputs:
@@ -342,7 +342,7 @@ BAMD-v3 performs the final selection from the candidate pool.
 
 The final score is:
 
-`$S = 0.55R + 0.30B + 0.15D_{\text{mix}}$`
+$S = 0.55R + 0.30B + 0.15D_{\text{mix}}$
 
 where:
 
@@ -359,7 +359,6 @@ For each class, KMeans is run with the number of clusters equal to the class bud
 ```text
 Class 0:
 1772 candidates → 389 clusters
-
 Class 1:
 760 candidates → 244 clusters
 ```
@@ -374,7 +373,7 @@ Only one sample is finally selected from each cluster.
 
 Teacher uncertainty is defined as:
 
-`$U_i = \min(p_{i0}, p_{i1})$`
+$U_i = \min(p_{i0}, p_{i1})$
 
 For each candidate, the method computes:
 
@@ -383,17 +382,17 @@ For each candidate, the method computes:
 
 Boundary support is:
 
-`$L_i = \frac{d_{\text{same}}}{d_{\text{same}} + d_{\text{opp}} + \epsilon}$`
+$L_i = \frac{d_{\text{same}}}{d_{\text{same}} + d_{\text{opp}} + \epsilon}$
 
 The final boundary value is:
 
-`$B_i = U_i L_i$`
+$B_i = U_i L_i$
 
 Default nearest-neighbor settings:
 
 ```text
 k_same = 10
-k_opp  = 10
+k_opp  = 10
 ```
 
 ---
@@ -402,15 +401,15 @@ k_opp  = 10
 
 Mixed diversity combines latent-space and categorical diversity:
 
-`$D_{\text{mix}} = \alpha D_{\text{latent}} + (1-\alpha)D_{\text{cat}}$`
+$D_{\text{mix}} = \alpha D_{\text{latent}} + (1-\alpha)D_{\text{cat}}$
 
 Default:
 
-`$\alpha = 0.8$`
+$\alpha = 0.8$
 
 Therefore:
 
-`$D_{\text{mix}} = 0.8D_{\text{latent}} + 0.2D_{\text{cat}}$`
+$D_{\text{mix}} = 0.8D_{\text{latent}} + 0.2D_{\text{cat}}$
 
 Latent diversity uses cosine distance.
 
@@ -433,12 +432,19 @@ Selection is iterative.
 At each iteration:
 
 1. remove candidates belonging to already selected clusters,
+
 2. compute representativeness,
+
 3. compute boundary score,
+
 4. compute diversity relative to the already selected set,
+
 5. compute the final score,
+
 6. select the highest-scoring candidate,
+
 7. mark its cluster as filled,
+
 8. update diversity distances.
 
 This continues until all class-specific budgets are filled.
@@ -448,7 +454,7 @@ Final subset:
 ```text
 Class 0: 389
 Class 1: 244
-Total:   633
+Total:   633
 ```
 
 ---
@@ -465,9 +471,9 @@ This script performs:
 
 ```text
 BAMD-v3 selection
-        ↓
+        ↓
 Final subset validation
-        ↓
+        ↓
 Downstream MLP evaluation
 ```
 
@@ -499,11 +505,11 @@ Default evaluation seeds:
 Typical training settings:
 
 ```text
-epochs        = 100
-batch size    = 256
+epochs        = 100
+batch size    = 256
 learning rate = 1e-3
-weight decay  = 1e-4
-patience      = 20
+weight decay  = 1e-4
+patience      = 20
 ```
 
 Evaluation output is stored under:
@@ -543,11 +549,10 @@ outputs/bamd_v3/
 Default seeds:
 
 ```text
-Teacher seed:      42
-PFI seed:          42
-Candidate seed:    42
-BAMD seed:         42
-
+Teacher seed:      42
+PFI seed:          42
+Candidate seed:    42
+BAMD seed:         42
 Evaluation seeds:
 0 1 2 3 4
 ```
@@ -556,23 +561,19 @@ Important BAMD-v3 parameters:
 
 ```text
 Candidate pool:
-    2532 samples
-
+    2532 samples
 Final subset:
-    Class 0 = 389
-    Class 1 = 244
-    Total   = 633
-
+    Class 0 = 389
+    Class 1 = 244
+    Total   = 633
 Score:
-    Representativeness = 0.55
-    Boundary           = 0.30
-    Diversity          = 0.15
-
+    Representativeness = 0.55
+    Boundary           = 0.30
+    Diversity          = 0.15
 Mixed diversity:
-    Latent      = 0.80
-    Categorical = 0.20
-
+    Latent      = 0.80
+    Categorical = 0.20
 Boundary:
-    k_same = 10
-    k_opp  = 10
-```
+    k_same = 10
+    k_opp  = 10
+``
