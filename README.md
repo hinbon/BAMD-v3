@@ -133,7 +133,7 @@ The remaining input features are treated as numerical features.
 
 ---
 
-# 5. Step 1 - Train Teacher
+## 5. Step 1 - Train Teacher
 
 The teacher is an MLP designed for mixed numerical and categorical tabular data.
 
@@ -141,20 +141,7 @@ Categorical features are converted to integer IDs and passed through learnable e
 
 For categorical feature $j$, the embedding dimension is:
 
-$
-d_j =
-\min
-\left(
-16,
-\max
-\left(
-4,
-\left\lfloor
-\frac{C_j}{2}
-\right\rfloor
-\right)
-\right)
-$
+`$d_j = \min(16, \max(4, \lfloor C_j / 2 \rfloor))$`
 
 where $C_j$ is the categorical cardinality.
 
@@ -212,18 +199,13 @@ The teacher checkpoint is selected using validation loss.
 
 ---
 
-# 6. Step 2 - Permutation Feature Importance
+## 6. Step 2 - Permutation Feature Importance
 
 Permutation Feature Importance measures how much the teacher performance degrades when one feature is randomly permuted.
 
 For feature $j$:
 
-$
-I_j =
-L_{\text{permuted},j}
--
-L_{\text{baseline}}
-$
+`$I_j = L_{\text{permuted},j} - L_{\text{baseline}}$`
 
 A larger value indicates that the teacher relies more strongly on that feature.
 
@@ -252,70 +234,46 @@ The file contains global and class-specific feature importance values and normal
 
 ---
 
-# 7. Step 3 - Candidate Pool Construction
+## 7. Step 3 - Candidate Pool Construction
 
 Step 3 reduces the full training set to a smaller candidate pool before final BAMD-v3 selection.
 
-## 7.1 Teacher input representation
+### 7.1 Teacher Input Representation
 
 For each sample:
 
-$
-Z =
-[
-X_{\text{num}},
-E_{\text{node}},
-E_{\text{parent}},
-E_{\text{rpl}}
-]
-$
+`$Z = [X_{\text{num}}, E_{\text{node}}, E_{\text{parent}}, E_{\text{rpl}}]$`
 
 where:
 
 - $X_{\text{num}}$ contains standardized numerical features,
-- $E$ denotes learned categorical embeddings from the teacher.
+- $E_{\text{node}}$, $E_{\text{parent}}$, and $E_{\text{rpl}}$ denote learned categorical embeddings from the teacher.
 
 Categorical embedding blocks are normalized before further processing.
 
 ---
 
-## 7.2 Class-specific feature weighting
+### 7.2 Class-Specific Feature Weighting
 
 Feature importance is used to construct separate weights for Class 0 and Class 1.
 
 For Class 0:
 
-$
-W_0 =
-\alpha_g I_{\text{global}}
-+
-\alpha_c I_{C0}
-$
+`$W_0 = \alpha_g I_{\text{global}} + \alpha_c I_{C0}$`
 
 For Class 1:
 
-$
-W_1 =
-\alpha_g I_{\text{global}}
-+
-\alpha_c I_{C1}
-$
+`$W_1 = \alpha_g I_{\text{global}} + \alpha_c I_{C1}$`
 
 Default values:
 
-$
-\alpha_g = 0.7
-$
+`$\alpha_g = 0.7$`
 
-$
-\alpha_c = 0.3
-$
+`$\alpha_c = 0.3$`
 
 Each feature block is scaled by:
 
-$
-\sqrt{w_j}
-$
+`$\sqrt{w_j}$`
 
 This produces:
 
@@ -326,25 +284,17 @@ weighted_representation_class1.npy
 
 The square-root scaling ensures that squared Euclidean distance becomes a feature-weighted distance:
 
-$
-d^2(x,y)
-=
-\sum_j
-w_j
-\|x_j-y_j\|^2
-$
+`$d^2(x,y) = \sum_j w_j \|x_j-y_j\|^2$`
 
 ---
 
-## 7.3 Candidate generation
+### 7.3 Candidate Generation
 
 Candidate selection is performed separately for Class 0 and Class 1 using MiniBatchKMeans.
 
 The default candidate pool size is:
 
-$
-4 \times 633 = 2532
-$
+`$4 \times 633 = 2532$`
 
 with approximately:
 
@@ -386,20 +336,13 @@ outputs/candidates/
 
 ---
 
-# 8. BAMD-v3 Selection
+## 8. BAMD-v3 Selection
 
 BAMD-v3 performs the final selection from the candidate pool.
 
 The final score is:
 
-$
-S =
-0.55R
-+
-0.30B
-+
-0.15D_{\text{mix}}
-$
+`$S = 0.55R + 0.30B + 0.15D_{\text{mix}}$`
 
 where:
 
@@ -409,7 +352,7 @@ where:
 
 ---
 
-## 8.1 Representativeness
+### 8.1 Representativeness
 
 For each class, KMeans is run with the number of clusters equal to the class budget.
 
@@ -427,14 +370,11 @@ Only one sample is finally selected from each cluster.
 
 ---
 
-## 8.2 Boundary Score
+### 8.2 Boundary Score
 
 Teacher uncertainty is defined as:
 
-$
-U_i =
-\min(p_{i0}, p_{i1})
-$
+`$U_i = \min(p_{i0}, p_{i1})$`
 
 For each candidate, the method computes:
 
@@ -443,18 +383,11 @@ For each candidate, the method computes:
 
 Boundary support is:
 
-$
-L_i =
-\frac{d_{\text{same}}}
-{d_{\text{same}} + d_{\text{opp}} + \epsilon}
-$
+`$L_i = \frac{d_{\text{same}}}{d_{\text{same}} + d_{\text{opp}} + \epsilon}$`
 
 The final boundary value is:
 
-$ 
-B_i =
-U_i L_i 
-$
+`$B_i = U_i L_i$`
 
 Default nearest-neighbor settings:
 
@@ -465,33 +398,19 @@ k_opp  = 10
 
 ---
 
-## 8.3 Mixed Diversity
+### 8.3 Mixed Diversity
 
 Mixed diversity combines latent-space and categorical diversity:
 
-$
-D_{\text{mix}}
-=
-\alpha D_{\text{latent}}
-+
-(1-\alpha)D_{\text{cat}}
-$
+`$D_{\text{mix}} = \alpha D_{\text{latent}} + (1-\alpha)D_{\text{cat}}$`
 
 Default:
 
-$
-\alpha = 0.8
-$
+`$\alpha = 0.8$`
 
 Therefore:
 
-$
-D_{\text{mix}}
-=
-0.8D_{\text{latent}}
-+
-0.2D_{\text{cat}}
-$
+`$D_{\text{mix}} = 0.8D_{\text{latent}} + 0.2D_{\text{cat}}$`
 
 Latent diversity uses cosine distance.
 
@@ -507,7 +426,7 @@ with separate categorical PFI weights for Class 0 and Class 1.
 
 ---
 
-## 8.4 Greedy Selection
+### 8.4 Greedy Selection
 
 Selection is iterative.
 
@@ -534,7 +453,7 @@ Total:   633
 
 ---
 
-# 9. Run BAMD-v3 and Downstream Evaluation
+## 9. Run BAMD-v3 and Downstream Evaluation
 
 The repository includes:
 
@@ -563,7 +482,7 @@ The script expects the outputs from Steps 1-3 to already exist.
 
 ---
 
-# 10. Downstream Evaluation
+## 10. Downstream Evaluation
 
 The selected subset is evaluated using an MLP downstream classifier.
 
@@ -601,7 +520,7 @@ comparison.csv
 
 ---
 
-# 11. BAMD-v3 Outputs
+## 11. BAMD-v3 Outputs
 
 After running the final selection stage:
 
@@ -619,7 +538,7 @@ outputs/bamd_v3/
 
 ---
 
-# 12. Reproducibility
+## 12. Reproducibility
 
 Default seeds:
 
