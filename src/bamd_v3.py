@@ -367,9 +367,23 @@ def main() -> None:
     candidate_labels = labels[candidates]
     c0_candidates = candidates[candidate_labels == 0]
     c1_candidates = candidates[candidate_labels == 1]
-    if len(c0_candidates) != 1772 or len(c1_candidates) != 760:
+    print(
+        f"Candidate counts: "
+        f"C0={len(c0_candidates)}, "
+        f"C1={len(c1_candidates)}",
+        flush=True,
+    )
+
+    if len(c0_candidates) < args.budget_c0:
         raise ValueError(
-            f"Expected candidate counts C0=1772/C1=760, got C0={len(c0_candidates)}/C1={len(c1_candidates)}"
+            f"Class 0 candidate count {len(c0_candidates)} "
+            f"is smaller than budget {args.budget_c0}"
+        )
+
+    if len(c1_candidates) < args.budget_c1:
+        raise ValueError(
+            f"Class 1 candidate count {len(c1_candidates)} "
+            f"is smaller than budget {args.budget_c1}"
         )
 
     pfi0, pfi1 = load_pfi_weights(Path(args.pfi))
